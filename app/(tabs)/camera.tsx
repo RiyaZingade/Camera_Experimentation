@@ -1,36 +1,43 @@
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function Camera() {
+export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
-  if (!permission) {
-    // Camera permissions are still loading.
-    return <View />;
-  }
-
+  if (!permission) return <View />;
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Text>We need your permission to show the camera</Text>
+        <TouchableOpacity onPress={requestPermission}>
+          <Text>Grant permission</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  }
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync();
+      console.log('📸 Photo captured at:', photo.uri);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} />
+      <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-          <Text style={styles.text}>Flip Camera</Text>
+        <TouchableOpacity onPress={takePicture} style={styles.button}>
+          <Text style={styles.text}>📸 Take Picture</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setFacing(facing === 'back' ? 'front' : 'back')}
+          style={styles.button}
+        >
+          <Text style={styles.text}>🔄 Flip</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -38,32 +45,19 @@ export default function Camera() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  message: {
-    textAlign: 'center',
-    paddingBottom: 10,
-  },
-  camera: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  camera: { flex: 1 },
   buttonContainer: {
     position: 'absolute',
-    bottom: 64,
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
+    bottom: 40,
     width: '100%',
-    paddingHorizontal: 64,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   button: {
-    flex: 1,
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 12,
+    borderRadius: 10,
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
+  text: { color: 'white', fontSize: 18 },
 });
